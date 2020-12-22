@@ -1,0 +1,12 @@
+LICENSE
+build/
+app
+gradle
+gradlew*
+gradlew.bat
+local.properties
+enclave-proxy
+pBTC
+pBTC-on-strongbox.iml
+README.md
+

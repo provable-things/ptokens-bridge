@@ -1,0 +1,14 @@
+*.apk
+*.bin
+
+# Temporary json
+.*.temp.json
+
+enclave-proxy/**
+!enclave-proxy/README.md
+
+# Rsync
+.exclude*
+
+# Environment
+
