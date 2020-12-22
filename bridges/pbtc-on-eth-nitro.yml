@@ -34,28 +34,6 @@ services:
     network_mode: host
     restart: unless-stopped
 
-  broadcaster_native:
-    image: provable/ptokens-${NATIVE_SYMBOL}-tx-broadcaster:1.0.1
-    env_file: ../.env
-    environment:
-      ENDPOINT_NATIVE_NODE: https://blockstream.info/
-    volumes:
-      - pnpm-store:/home/provable/.pnpm-store
-      - broadcaster_native_nm:/home/provable/broadcaster/node_modules
-      - sync:/home/provable/sync
-    network_mode: host    
-    restart: unless-stopped
-
-  broadcaster_host:
-    image: provable/ptokens-${HOST_SYMBOL}-tx-broadcaster:1.2.2
-    env_file: ../.env
-    volumes:
-      - pnpm-store:/home/provable/.pnpm-store
-      - broadcaster_host_nm:/home/provable/broadcaster/node_modules
-      - sync:/home/provable/sync
-    network_mode: host    
-    restart: unless-stopped
-
   api:
     image: provable/ptokens-api-server:1.9.0-vanilla
     env_file: ../.env
