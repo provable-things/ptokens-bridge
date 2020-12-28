@@ -1,17 +1,23 @@
+#!/bin/bash
+
 SCRIPT_CONSTANTS=$HOME/scripts/constants.sh
 
-[ -f $SCRIPT_CONSTANTS ] && . $SCRIPT_CONSTANTS
-[ -f $SCRIPT_UTILS ] && . $SCRIPT_UTILS
-[ -f $SCRIPT_LOG ] && . $SCRIPT_LOG
+# shellcheck source=./scripts/constants.sh
+[ -f "$SCRIPT_CONSTANTS" ] && . "$SCRIPT_CONSTANTS"
+# shellcheck source=./scripts/utils.sh
+[ -f "$SCRIPT_UTILS" ] && . "$SCRIPT_UTILS"
+# shellcheck source=./scripts/log.sh
+[ -f "$SCRIPT_LOG" ] && . "$SCRIPT_LOG"
 
 function maybe_push_smartcontract_bytecode() { 
   case $TEE in
     strongbox )
       $EXC_ADB push \
-        $FOLDER_SYNC/smart-contract-bytecode \
+        "$FOLDER_SYNC/smart-contract-bytecode" \
         /data/local/tmp/ \
         1>> /dev/null 
           
+      # shellcheck disable=SC2181
       [[ ! $? -eq 0 ]] \
         && loge "Failed to push the file...aborting!" && exit 1 \
         || logi "Smart contract bytecode pushed...done!"
@@ -34,25 +40,26 @@ function eth_init() {
   
   case $TEE in
     nitro )
-      cd $FOLDER_PROXY && $EXC_PROXY initializeEth \
-        --FILE=$FOLDER_SYNC/smart-contract-bytecode \
-        --confs=$confs \
-        --gasPrice=$gas_price \
-        --chainId=$chain_id \
-        --file=$FOLDER_SYNC/$symbol-init.json \
-        1> $FOLDER_SYNC/.$symbol-init-output.json    
+      cd "$FOLDER_PROXY" && $EXC_PROXY initializeEth \
+        --FILE="$FOLDER_SYNC"/smart-contract-bytecode \
+        --confs="$confs" \
+        --gasPrice="$gas_price" \
+        --chainId="$chain_id" \
+        --file="$FOLDER_SYNC/$symbol-init.json" \
+        1> "$FOLDER_SYNC/.$symbol-init-output.json"
       ;;
     * )
-      cd $FOLDER_PROXY && $EXC_PROXY initializeEth \
-        $FOLDER_SYNC/smart-contract-bytecode \
-        --confs=$confs \
-        --gasPrice=$gas_price \
-        --chainId=$chain_id \
-        --file=$FOLDER_SYNC/$symbol-init.json \
-        1> $FOLDER_SYNC/.$symbol-init-output.json
+      cd "$FOLDER_PROXY" && $EXC_PROXY initializeEth \
+        "$FOLDER_SYNC/smart-contract-bytecode" \
+        --confs="$confs" \
+        --gasPrice="$gas_price" \
+        --chainId="$chain_id" \
+        --file="$FOLDER_SYNC/$symbol-init.json" \
+        1> "$FOLDER_SYNC/.$symbol-init-output.json"
       ;;
   esac
 
+  # shellcheck disable=SC2181
   [[ $? -ne 0 ]] \
     && loge "Failed to initialize enclave...aborting!" && exit 1 \
     || logi "Initializing ETH side...done"
@@ -85,9 +92,10 @@ function eth_init_host() {
 }
 
 function initialize_eth() {
-  [[ `env | egrep '^(eth|erc20)$' | grep 'NATIVE'` ]] \
-  && eth_init_native \
-  || eth_init_host
+  # shellcheck disable=SC2143
+  [[ $(env | grep -E '^(eth|erc20)$' | grep 'NATIVE') ]] \
+    && eth_init_native \
+    || eth_init_host
 }
 
 function initialize_erc20() {
@@ -97,20 +105,18 @@ function initialize_erc20() {
 
 function prepare_eth_sync_material() {
   local symbol
-  local initialization_output
+  local initialization_file
   local smart_contract_address
   local enclave_address
   local syncer_file
   local apiserver_file
   local broadcaster_file
 
-  symbol=`echo "$NATIVE_SYMBOL $HOST_SYMBOL" | egrep -o "(erc20|eth)"`
-  initialization_output=`cat $FOLDER_SYNC/.$symbol-init-output.json`
+  symbol=$(echo "$NATIVE_SYMBOL $HOST_SYMBOL" | grep -E -o "(erc20|eth)")
+  initialization_file=$FOLDER_SYNC/.$symbol-init-output.json
 
-  smart_contract_address=`echo $initialization_output \
-    | jq  -r '.smart_contract_address'`
-  enclave_address=`echo $initialization_output \
-    | jq  -r '.eth_address'`
+  smart_contract_address=$(jq -r '.smart_contract_address' "$initialization_file")
+  enclave_address=$(jq -r '.eth_address' "$initialization_file")
 
   logd "enclave_address: $enclave_address"
   logd "smart_contract_address: $smart_contract_address"
@@ -124,15 +130,13 @@ function prepare_eth_sync_material() {
   maybe_initialize_json_file "$broadcaster_file"
 
   local broadcaster_content
-  broadcaster_content=`cat $broadcaster_file \
-    | jq ".ENCLAVE_ADDRESS=\"$enclave_address\""`
-
   local api_content
-  api_content=`cat $apiserver_file \
-    | jq ".SMART_CONTRACT_ADDRESS=\"$smart_contract_address\""`
 
-  echo "$broadcaster_content" > $broadcaster_file
-  echo "$api_content" > $apiserver_file
+  broadcaster_content=$(jq ".ENCLAVE_ADDRESS=\"$enclave_address\"" "$broadcaster_file")
+  api_content=$(jq ".SMART_CONTRACT_ADDRESS=\"$smart_contract_address\"" "$apiserver_file")
+
+  echo "$broadcaster_content" > "$broadcaster_file"
+  echo "$api_content" > "$apiserver_file"
 
   touch_start_files "$symbol"
 

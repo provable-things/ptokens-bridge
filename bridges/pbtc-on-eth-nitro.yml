@@ -13,7 +13,7 @@ services:
     network_mode: host
 
   syncer_native:
-    image: provable/ptokens-${NATIVE_SYMBOL}-syncer:1.12.4-${TEE}
+    image: provable/ptokens-${NATIVE_SYMBOL}-syncer:1.13.0-${TEE}
     env_file: ../.env
     volumes:
       - pnpm-store:/home/provable/.pnpm-store
@@ -24,7 +24,7 @@ services:
     restart: unless-stopped
 
   syncer_host:
-    image: provable/ptokens-${HOST_SYMBOL}-syncer:1.5.3-${TEE}
+    image: provable/ptokens-${HOST_SYMBOL}-syncer:1.6.0-${TEE}
     env_file: ../.env
     volumes:
       - pnpm-store:/home/provable/.pnpm-store

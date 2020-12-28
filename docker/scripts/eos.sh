@@ -1,23 +1,28 @@
+#!/bin/bash
 SCRIPT_CONSTANTS=$HOME/scripts/constants.sh
 
-[ -f $SCRIPT_CONSTANTS ] && . $SCRIPT_CONSTANTS
-[ -f $SCRIPT_UTILS ] && . $SCRIPT_UTILS
+# shellcheck source=./scripts/constants.sh
+[ -f "$SCRIPT_CONSTANTS" ] && . "$SCRIPT_CONSTANTS"
+# shellcheck source=./scripts/utils.sh
+[ -f "$SCRIPT_UTILS" ] && . "$SCRIPT_UTILS"
 
 function eos_init() {
   local symbol
 	local chainId
 	local account_name
+
   symbol=$1
   chainId=$2
   account_name=$3
 
-  cd $FOLDER_PROXY && $EXC_PROXY initializeEos \
-    --symbol=$symbol \
-    --chainId=$chainId \
-    --accountName=$account_name \
-  	--file=$FOLDER_SYNC/$symbol-init.json \
-    1> $FOLDER_SYNC/.$symbol-init-output.json
+  cd "$FOLDER_PROXY" && $EXC_PROXY initializeEos \
+    --symbol="$symbol" \
+    --chainId="$chainId" \
+    --accountName="$account_name" \
+  	--file="$FOLDER_SYNC/$symbol-init.json" \
+    1> "$FOLDER_SYNC/.$symbol-init-output.json"
 
+  # shellcheck disable=SC2181
   [[ ! $? -eq 0 ]] \
     && loge "Failed to initialize enclave...aborting!" && exit 1 \
     || logi "Initializing EOS side...done"
@@ -26,14 +31,16 @@ function eos_init() {
 function erc20_eos_init() {
 	local symbol	
 	local chain_id
+
 	symbol=$1
 	chain_id=$2
 
-  cd $FOLDER_PROXY && $EXC_PROXY initializeEos \
-    --eosChainId=$chain_id \
-    --file=$FOLDER_SYNC/$symbol-init.json \
-    1> $FOLDER_SYNC/.$symbol-init-output.json
+  cd "$FOLDER_PROXY" && $EXC_PROXY initializeEos \
+    --eosChainId="$chain_id" \
+    --file="$FOLDER_SYNC/$symbol-init.json" \
+    1> "$FOLDER_SYNC/.$symbol-init-output.json"
 
+  # shellcheck disable=SC2181
   [[ ! $? -eq 0 ]] \
     && loge "Failed to initialize enclave...aborting!" && exit 1 \
     || logi "Initializing EOS(perc20) side...done"
@@ -70,9 +77,11 @@ function initialize_eos() {
     return 0
   fi
 
-  [[ `env | egrep '^eos$' | grep 'NATIVE'` ]] \
-  && eos_init_native \
-  || eos_init_host
+  if env | grep -q -E '^eos$' | grep 'NATIVE'; then
+    eos_init_native
+  else
+    eos_init_host
+  fi
 }
 
 function prepare_eos_sync_material() {

@@ -1,14 +1,20 @@
 #!/bin/bash
 SCRIPT_CONSTANTS=$HOME/scripts/constants.sh
 
-[ -f $SCRIPT_CONSTANTS ] && . $SCRIPT_CONSTANTS
-[ -f $SCRIPT_ERC20 ] && . $SCRIPT_ERC20
-[ -f $SCRIPT_UTILS ] && . $SCRIPT_UTILS
-[ -f $SCRIPT_BTC ] && . $SCRIPT_BTC
-[ -f $SCRIPT_ETH ] && . $SCRIPT_ETH
-[ -f $SCRIPT_EOS ] && . $SCRIPT_EOS
-[ -f $SCRIPT_LOG ] && . $SCRIPT_LOG
-[ -f $SCRIPT_DB ] && . $SCRIPT_DB
+# shellcheck source=./scripts/constants.sh
+[ -f "$SCRIPT_CONSTANTS" ] && . "$SCRIPT_CONSTANTS"
+# shellcheck source=./scripts/utils.sh
+[ -f "$SCRIPT_UTILS" ] && . "$SCRIPT_UTILS"
+# shellcheck source=./scripts/btc.sh
+[ -f "$SCRIPT_BTC" ] && . "$SCRIPT_BTC"
+# shellcheck source=./scripts/eth.sh
+[ -f "$SCRIPT_ETH" ] && . "$SCRIPT_ETH"
+# shellcheck source=./scripts/eos.sh
+[ -f "$SCRIPT_EOS" ] && . "$SCRIPT_EOS"
+# shellcheck source=./scripts/log.sh
+[ -f "$SCRIPT_LOG" ] && . "$SCRIPT_LOG"
+# shellcheck source=./scripts/db.sh
+[ -f "$SCRIPT_DB" ] && . "$SCRIPT_DB"
 
 function forget() {
 	drop_sync_files
@@ -25,9 +31,9 @@ function deploy() {
 	
 	logi "Recognized p${NATIVE_SYMBOL}-on-${HOST_SYMBOL} deployment"
 
-	native_block_init="$FOLDER_SYNC/$NATIVE_SYMBOL-init.json"
-	host_block_init="$FOLDER_SYNC/$HOST_SYMBOL-init.json"
-	smart_contract_bytecode="$FOLDER_SYNC/smart-contract-bytecode"
+	native_block_init=$FOLDER_SYNC/$NATIVE_SYMBOL-init.json
+	host_block_init=$FOLDER_SYNC/$HOST_SYMBOL-init.json
+	smart_contract_bytecode=$FOLDER_SYNC/smart-contract-bytecode
 
 	maybe_install_app
 	
@@ -49,13 +55,12 @@ function deploy() {
 function sync() {
 
 	logi "Loading components configuration..."
-	local available_symbols
-	
+
 	# outputs something like:
 	#   btc
 	#   eth
 	echo "$NATIVE_SYMBOL $HOST_SYMBOL" \
-		| egrep -o "$REGEX_SUPPORTED_SYMBOLS" \
+		| grep -E -o "$REGEX_SUPPORTED_SYMBOLS" \
 		| while read -r symbol; do
 			case $symbol in
 				eth|erc20 )
@@ -72,11 +77,11 @@ function sync() {
 
 	add_bridge_info
 	
-	touch $FOLDER_SYNC/api-server.start
+	touch "$FOLDER_SYNC/api-server.start"
 }
 
 function rm_safety_file() {
-	rm -f $FILE_SAFETY
+	rm -f "$FILE_SAFETY"
 	logi "Removing safety file...done!"
 }
 
@@ -106,4 +111,4 @@ function main() {
 	exit 0
 }
 
-main $@
+main "$@"
