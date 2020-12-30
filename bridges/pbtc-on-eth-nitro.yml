@@ -35,7 +35,7 @@ services:
     restart: unless-stopped
 
   api:
-    image: provable/ptokens-api-server:1.9.0-vanilla
+    image: provable/ptokens-api-server:1.10.0-vanilla
     env_file: ../.env
     volumes:
       - sync:/home/provable/sync

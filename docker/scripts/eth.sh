@@ -105,9 +105,9 @@ function initialize_erc20() {
 
 function prepare_eth_sync_material() {
   local symbol
+  local eth_address
   local initialization_file
   local smart_contract_address
-  local enclave_address
   local syncer_file
   local apiserver_file
   local broadcaster_file
@@ -116,9 +116,9 @@ function prepare_eth_sync_material() {
   initialization_file=$FOLDER_SYNC/.$symbol-init-output.json
 
   smart_contract_address=$(jq -r '.smart_contract_address' "$initialization_file")
-  enclave_address=$(jq -r '.eth_address' "$initialization_file")
+  eth_address=$(jq -r '.eth_address' "$initialization_file")
 
-  logd "enclave_address: $enclave_address"
+  logd "eth_address: $eth_address"
   logd "smart_contract_address: $smart_contract_address"
 
   syncer_file=$FOLDER_SYNC/$symbol-syncer.json
@@ -132,11 +132,16 @@ function prepare_eth_sync_material() {
   local broadcaster_content
   local api_content
 
-  broadcaster_content=$(jq ".ENCLAVE_ADDRESS=\"$enclave_address\"" "$broadcaster_file")
-  api_content=$(jq ".SMART_CONTRACT_ADDRESS=\"$smart_contract_address\"" "$apiserver_file")
+  broadcaster_content=$(jq ".ENCLAVE_ADDRESS=\"$eth_address\"" "$broadcaster_file")
+  api_content=$(jq "\
+    .SMART_CONTRACT_ADDRESS=\"$smart_contract_address\" | \
+    .HOST_IDENTITY=\"$eth_address\"" \
+    "$apiserver_file" \
+  )
 
   echo "$broadcaster_content" > "$broadcaster_file"
   echo "$api_content" > "$apiserver_file"
+
 
   touch_start_files "$symbol"
 
