@@ -76,6 +76,8 @@ function sync() {
 		done
 
 	add_bridge_info
+
+	initialize_latest_block_nums
 	
 	touch "$FOLDER_SYNC/api-server.start"
 }
