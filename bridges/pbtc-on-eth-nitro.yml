@@ -10,6 +10,7 @@ services:
     volumes:
       - sync:/home/provable/sync
       - ../enclave-proxy:/home/provable/proxy
+      - $IAM_CREDENTIALS:/home/provable/.iam_credentials
     network_mode: host
 
   syncer_native:
@@ -20,6 +21,7 @@ services:
       - sync:/home/provable/sync
       - syncer_native_nm:/home/provable/syncer/node_modules
       - ../enclave-proxy:/home/provable/proxy
+      - $IAM_CREDENTIALS:/home/provable/.iam_credentials
     network_mode: host
     restart: unless-stopped
 
@@ -31,6 +33,7 @@ services:
       - sync:/home/provable/sync
       - syncer_host_nm:/home/provable/syncer/node_modules
       - ../enclave-proxy:/home/provable/proxy
+      - $IAM_CREDENTIALS:/home/provable/.iam_credentials
     network_mode: host
     restart: unless-stopped
 
