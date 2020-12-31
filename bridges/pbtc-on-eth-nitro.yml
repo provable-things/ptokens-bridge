@@ -14,7 +14,7 @@ services:
     network_mode: host
 
   syncer_native:
-    image: provable/ptokens-${NATIVE_SYMBOL}-syncer:1.13.0-${TEE}
+    image: provable/ptokens-${NATIVE_SYMBOL}-syncer:1.13.1-${TEE}
     env_file: ../.env
     volumes:
       - pnpm-store:/home/provable/.pnpm-store
@@ -23,10 +23,10 @@ services:
       - ../enclave-proxy:/home/provable/proxy
       - $IAM_CREDENTIALS:/home/provable/.iam_credentials
     network_mode: host
-    restart: unless-stopped
+    restart: on-failure
 
   syncer_host:
-    image: provable/ptokens-${HOST_SYMBOL}-syncer:1.7.0-${TEE}
+    image: provable/ptokens-${HOST_SYMBOL}-syncer:1.7.1-${TEE}
     env_file: ../.env
     volumes:
       - pnpm-store:/home/provable/.pnpm-store
@@ -35,7 +35,7 @@ services:
       - ../enclave-proxy:/home/provable/proxy
       - $IAM_CREDENTIALS:/home/provable/.iam_credentials
     network_mode: host
-    restart: unless-stopped
+    restart: on-failure
 
   api:
     image: provable/ptokens-api-server:1.10.0-vanilla
