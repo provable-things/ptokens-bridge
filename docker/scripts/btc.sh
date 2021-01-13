@@ -35,6 +35,10 @@ function initialize_btc() {
   initialize_btc_fork "btc"
 }
 
+function initialize_doge() {
+  initialize_btc_fork "doge"
+}
+
 function get_enclave_public_key() {
   __public_key=$1
 
@@ -70,7 +74,7 @@ function prepare_btc_sync_material() {
   local btc_syncer_file
   local btc_broadcaster_file
 
-  symbol=$(echo "$NATIVE_SYMBOL $HOST_SYMBOL" | grep -E -o '(btc|ltc|dash)')
+  symbol=$(echo "$NATIVE_SYMBOL" | grep -E -o "$REGEX_BTC_BASED_SYMBOLS")
 
   get_enclave_public_key enclave_public_key
 
@@ -83,7 +87,11 @@ function prepare_btc_sync_material() {
   maybe_initialize_json_file "$btc_broadcaster_file"
 
   local api_content
-  api_content=$(jq ".ENCLAVE_PUBLIC_KEY=\"$enclave_public_key\"" "$apiserver_sync_file")
+  api_content=$(jq " \
+    .ENCLAVE_PUBLIC_KEY=\"$enclave_public_key\" | \
+    .RELATIVE_PATH_TO_ADDRESS_GENERATOR=\"/home/provable/proxy\"" \
+    "$apiserver_sync_file" \
+  )
 
   logd "$api_content"
 

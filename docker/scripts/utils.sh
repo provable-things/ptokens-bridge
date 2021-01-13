@@ -5,6 +5,8 @@ SCRIPT_CONSTANTS=$HOME/scripts/constants.sh
 [ -f "$SCRIPT_CONSTANTS" ] && . "$SCRIPT_CONSTANTS"
 # shellcheck source=./scripts/log.sh
 [ -f "$SCRIPT_LOG" ] && . "$SCRIPT_LOG"
+# shellcheck source=./scripts/adb.sh
+[ -f "$SCRIPT_ADB" ] && . "$SCRIPT_ADB"
 
 function wait_file() {
   local file
@@ -54,27 +56,17 @@ function capitalize_first_letter() {
 }
 
 function maybe_uninstall_app() {
-  local package_name
-  package_name=io.ptokens.p${NATIVE_SYMBOL}on${HOST_SYMBOL}
   case $TEE in
     strongbox )
-      
-      [[ ! $($EXC_ADB uninstall "$package_name" 1>> /dev/null) ]] \
-        && logi "Failed to uninstall $package_name: maybe app doesn't exist..." \
-        || logi "Uninstalling $package_name...done!"
+      adb_uninstall
       ;;
   esac
 }
 
 function maybe_install_app() {
-  local apk_name=$HOME/p${NATIVE_SYMBOL}on${HOST_SYMBOL}-debug.apk
   case $TEE in
     strongbox )
-      [[ ! $($EXC_ADB install "$apk_name" >> /dev/null) ]] \
-        && loge "Failed to install $apk_name: abort!" && exit 1 \
-        || logi "Installing $apk_name...done!"
-
-      maybe_set_write_storage_permissions
+      adb_install
       ;;
   esac
 
@@ -94,9 +86,14 @@ function drop_sync_files() {
   rm "$FOLDER_SYNC"/*.json 2> /dev/null
   rm "$FOLDER_SYNC"/*.start 2> /dev/null
 
-  [[ "$SKIP_SMART_CONTRACT_BYTECODE_GENERATION" -ne "1" ]] \
-    && rm -f "$FOLDER_SYNC/smart-contract-bytecode" \
-    || :
+  if [[ -z "$SKIP_SMART_CONTRACT_BYTECODE_GENERATION" ]]; then
+    logd "Removing $FOLDER_SYNC/smart-contract-bytecode..."
+    if [[ $(rm "$FOLDER_SYNC/smart-contract-bytecode") -eq 0 ]]; then
+      logd "Old bytecode removed"
+    else
+      loge "Failed to remove old bytecode, maybe doens't exit?"
+    fi
+  fi
 
   logi "Removing sync files...done!"
 }
@@ -108,23 +105,8 @@ function grant_permission() {
   package_name=$1
   permission=$2
 
-  $EXC_ADB shell pm grant "$package_name" "$permission" >> /dev/null 
-}
-
-function maybe_set_write_storage_permissions() {
-  local package_name
-  local permission
-  package_name=io.ptokens.p${NATIVE_SYMBOL}on${HOST_SYMBOL}
-  permission=android.permission.WRITE_EXTERNAL_STORAGE
-  case $TEE in
-    strongbox )
-      if [[ $(grant_permission "$package_name" "$permission") ]]; then
-        logi "WRITE_EXTERNAL_STORAGE permission set!"
-      else
-        loge "Failed to set the permission...aborting!"
-      fi
-      ;;
-  esac
+  logd "Permissions to $package_name $permission"
+  
 }
 
 function maybe_initialize_json_file() {
@@ -204,4 +186,21 @@ function add_bridge_info() {
     logd "$new_api_json"
     echo "$new_api_json" > "$api_server_file"
   fi
+}
+
+function maybe_install_proxy_deps() {
+  case $TEE in
+    strongbox )
+      logi "Installing node dependencies into $FOLDER_PROXY"
+      pnpm install -C "$FOLDER_PROXY" 1> /dev/null
+      ;;
+    vanilla )
+      ;;
+    nitro )
+      ;;
+    *)
+      loge "Unknown TEE, aborting!"
+      exit 1
+      ;;
+  esac
 }
