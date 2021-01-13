@@ -2,7 +2,7 @@
 FROM node:10-buster-slim
 
 LABEL maintainer="Provable Things Ltd <info@provable.xyz>" \
-    version="1.1"
+    version="1.2"
 
 ENV HOME /home/provable
 ENV PNPM_STORE $HOME/.pnpm-store
@@ -28,6 +28,7 @@ RUN groupadd --gid 1001 provable && \
         cbor \
         requests==2.24.0 \
         asn1crypto==1.4.0 \
-        pycryptodome && \
+        pycryptodome \
+        filelock && \
     mkdir $PNPM_STORE && \
     chown provable:provable $HOME

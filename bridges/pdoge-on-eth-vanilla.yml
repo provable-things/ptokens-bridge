@@ -10,39 +10,37 @@ services:
     volumes:
       - sync:/home/provable/sync
       - ../enclave-proxy:/home/provable/proxy
-      - $IAM_CREDENTIALS:/home/provable/.iam_credentials
     network_mode: host
 
   syncer_native:
-    image: provable/ptokens-${NATIVE_SYMBOL}-syncer:1.15.2-${TEE}
+    image: provable/ptokens-btc-syncer:1.14.0-${TEE}
     env_file: ../.env
     volumes:
       - pnpm-store:/home/provable/.pnpm-store
       - sync:/home/provable/sync
       - syncer_native_nm:/home/provable/syncer/node_modules
       - ../enclave-proxy:/home/provable/proxy
-      - $IAM_CREDENTIALS:/home/provable/.iam_credentials
     network_mode: host
     restart: unless-stopped
 
   syncer_host:
-    image: provable/ptokens-${HOST_SYMBOL}-syncer:1.7.4-${TEE}
+    image: provable/ptokens-eth-syncer:1.7.4-${TEE}
     env_file: ../.env
     volumes:
       - pnpm-store:/home/provable/.pnpm-store
       - sync:/home/provable/sync
       - syncer_host_nm:/home/provable/syncer/node_modules
       - ../enclave-proxy:/home/provable/proxy
-      - $IAM_CREDENTIALS:/home/provable/.iam_credentials
     network_mode: host
     restart: unless-stopped
 
   api:
-    image: provable/ptokens-api-server:1.11.0-${TEE}
+    image: provable/ptokens-api-server:1.11.0-vanilla
     env_file: ../.env
     volumes:
       - sync:/home/provable/sync
       - api_server_nm:/home/provable/api-server/node_modules
+      - ../enclave-proxy:/home/provable/proxy
     network_mode: host
     restart: unless-stopped
 
@@ -56,7 +54,27 @@ services:
       - build:/home/provable/generator/build
       - smart_contract_generator_nm:/home/provable/generator/node_modules
     network_mode: host
-  
+
+  broadcaster_native:
+    image: provable/ptokens-btc-tx-broadcaster:1.1.0
+    env_file: ../.env
+    volumes:
+      - pnpm-store:/home/provable/.pnpm-store
+      - broadcaster_native_nm:/home/provable/broadcaster/node_modules
+      - sync:/home/provable/sync
+    network_mode: host    
+    restart: unless-stopped
+
+  broadcaster_host:
+    image: provable/ptokens-${HOST_SYMBOL}-tx-broadcaster:1.2.2
+    env_file: ../.env
+    volumes:
+      - pnpm-store:/home/provable/.pnpm-store
+      - broadcaster_host_nm:/home/provable/broadcaster/node_modules
+      - sync:/home/provable/sync
+    network_mode: host    
+    restart: unless-stopped
+
 volumes:
   sync:
   build:

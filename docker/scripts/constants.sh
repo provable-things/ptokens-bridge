@@ -17,6 +17,8 @@ SCRIPT_TELOS=$HOME/scripts/telos.sh
 SCRIPT_UTILS=$HOME/scripts/utils.sh
 # shellcheck disable=SC2034
 SCRIPT_ERC20=$HOME/scripts/erc20.sh
+# shellcheck disable=SC2034
+SCRIPT_ADB=$HOME/scripts/adb.sh
 
 # shellcheck disable=SC2034
 FILE_SMART_CONTRACT_BYTECODE=$HOME/sync
@@ -25,8 +27,7 @@ FILE_SAFETY=$FOLDER_PROXY/.new
 
 # shellcheck disable=SC2034
 EXC_PROXY=./$TEE
-# shellcheck disable=SC2034
-EXC_ADB=/usr/bin/adb
 
 # shellcheck disable=SC2034
-REGEX_SUPPORTED_SYMBOLS="(eth|erc20|eos|telos|btc|ltc|dash)"
+REGEX_SUPPORTED_SYMBOLS="(eth|erc20|eos|telos|btc|ltc|dash|doge)"
+REGEX_BTC_BASED_SYMBOLS="(btc|ltc|dash|doge)"

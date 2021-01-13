@@ -10,40 +10,46 @@ services:
     volumes:
       - sync:/home/provable/sync
       - ../enclave-proxy:/home/provable/proxy
-      - $IAM_CREDENTIALS:/home/provable/.iam_credentials
+      - /dev/bus/usb/:/dev/bus/usb
     network_mode: host
+    privileged: true
 
   syncer_native:
-    image: provable/ptokens-${NATIVE_SYMBOL}-syncer:1.15.2-${TEE}
+    image: provable/ptokens-btc-syncer:1.14.0-${TEE}
     env_file: ../.env
     volumes:
       - pnpm-store:/home/provable/.pnpm-store
       - sync:/home/provable/sync
       - syncer_native_nm:/home/provable/syncer/node_modules
       - ../enclave-proxy:/home/provable/proxy
-      - $IAM_CREDENTIALS:/home/provable/.iam_credentials
+      - /dev/bus/usb/:/dev/bus/usb
     network_mode: host
+    privileged: true
     restart: unless-stopped
 
   syncer_host:
-    image: provable/ptokens-${HOST_SYMBOL}-syncer:1.7.4-${TEE}
+    image: provable/ptokens-eth-syncer:1.7.4-${TEE}
     env_file: ../.env
     volumes:
       - pnpm-store:/home/provable/.pnpm-store
       - sync:/home/provable/sync
       - syncer_host_nm:/home/provable/syncer/node_modules
       - ../enclave-proxy:/home/provable/proxy
-      - $IAM_CREDENTIALS:/home/provable/.iam_credentials
+      - /dev/bus/usb/:/dev/bus/usb
     network_mode: host
+    privileged: true
     restart: unless-stopped
 
   api:
-    image: provable/ptokens-api-server:1.11.0-${TEE}
+    image: provable/ptokens-api-server:1.11.0-strongbox
     env_file: ../.env
     volumes:
       - sync:/home/provable/sync
       - api_server_nm:/home/provable/api-server/node_modules
+      - ../enclave-proxy:/home/provable/proxy
+      - /dev/bus/usb/:/dev/bus/usb
     network_mode: host
+    privileged: true
     restart: unless-stopped
 
   smart_contract_generator:
@@ -55,8 +61,34 @@ services:
       - sync:/home/provable/sync
       - build:/home/provable/generator/build
       - smart_contract_generator_nm:/home/provable/generator/node_modules
+      - /dev/bus/usb/:/dev/bus/usb
     network_mode: host
-  
+    privileged: true
+
+  broadcaster_native:
+    image: provable/ptokens-btc-tx-broadcaster:1.1.0
+    env_file: ../.env
+    volumes:
+      - pnpm-store:/home/provable/.pnpm-store
+      - broadcaster_native_nm:/home/provable/broadcaster/node_modules
+      - sync:/home/provable/sync
+      - /dev/bus/usb/:/dev/bus/usb
+    network_mode: host
+    privileged: true
+    restart: unless-stopped
+
+  broadcaster_host:
+    image: provable/ptokens-${HOST_SYMBOL}-tx-broadcaster:1.2.2
+    env_file: ../.env
+    volumes:
+      - pnpm-store:/home/provable/.pnpm-store
+      - broadcaster_host_nm:/home/provable/broadcaster/node_modules
+      - sync:/home/provable/sync
+      - /dev/bus/usb/:/dev/bus/usb
+    network_mode: host
+    privileged: true
+    restart: unless-stopped
+
 volumes:
   sync:
   build:

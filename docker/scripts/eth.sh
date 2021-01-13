@@ -8,19 +8,18 @@ SCRIPT_CONSTANTS=$HOME/scripts/constants.sh
 [ -f "$SCRIPT_UTILS" ] && . "$SCRIPT_UTILS"
 # shellcheck source=./scripts/log.sh
 [ -f "$SCRIPT_LOG" ] && . "$SCRIPT_LOG"
+# shellcheck source=./scripts/adb.sh
+[ -f "$SCRIPT_ADB" ] && . "$SCRIPT_ADB"
 
 function maybe_push_smartcontract_bytecode() { 
   case $TEE in
     strongbox )
-      $EXC_ADB push \
-        "$FOLDER_SYNC/smart-contract-bytecode" \
-        /data/local/tmp/ \
-        1>> /dev/null 
-          
-      # shellcheck disable=SC2181
-      [[ ! $? -eq 0 ]] \
-        && loge "Failed to push the file...aborting!" && exit 1 \
-        || logi "Smart contract bytecode pushed...done!"
+      if [[ $(adb_push_smart_contract_bytecode) -ne 0 ]]; then
+        loge "Failed to push the file...aborting!"
+        exit 1
+      else
+        logi "Smart contract bytecode pushed...done!"
+      fi
       ;;
   esac
 }

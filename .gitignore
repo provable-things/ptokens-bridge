@@ -4,6 +4,7 @@
 # Temporary json
 .*.temp.json
 
+db-repl
 enclave-proxy/**
 !enclave-proxy/README.md
 

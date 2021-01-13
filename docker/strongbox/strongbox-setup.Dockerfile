@@ -1,5 +1,5 @@
 FROM mongo:4.2.11-bionic
-FROM provable/ptokens-nitro-base:1.2
+FROM provable/ptokens-strongbox-base-tmp:1.0
 
 ENV FOLDER_SYNC $HOME/sync
 ENV FOLDER_PROXY $HOME/proxy
