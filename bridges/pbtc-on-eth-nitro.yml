@@ -47,7 +47,7 @@ services:
     restart: unless-stopped
 
   smart_contract_generator:
-    image: provable/ptokens-erc777-smart-contract:2.2.1
+    image: provable/ptokens-erc777-smart-contract:2.3.0
     env_file: ../.env
     environment:
       NEW: $NEW

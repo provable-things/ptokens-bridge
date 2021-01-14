@@ -86,15 +86,6 @@ function drop_sync_files() {
   rm "$FOLDER_SYNC"/*.json 2> /dev/null
   rm "$FOLDER_SYNC"/*.start 2> /dev/null
 
-  if [[ -z "$SKIP_SMART_CONTRACT_BYTECODE_GENERATION" ]]; then
-    logd "Removing $FOLDER_SYNC/smart-contract-bytecode..."
-    if [[ $(rm "$FOLDER_SYNC/smart-contract-bytecode") -eq 0 ]]; then
-      logd "Old bytecode removed"
-    else
-      loge "Failed to remove old bytecode, maybe doens't exit?"
-    fi
-  fi
-
   logi "Removing sync files...done!"
 }
 
