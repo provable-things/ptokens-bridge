@@ -146,3 +146,52 @@ function prepare_eth_sync_material() {
 
   logi "${symbol^^} configuration material ready"
 }
+
+function maybe_generate_smartcontract_bytecode() {
+  local smart_contract_generator_start
+  local smart_contract_bytecode
+  smart_contract_bytecode=$FOLDER_SYNC/smart-contract-bytecode
+  smart_contract_generator_start=$FOLDER_SYNC/smart-contract-generator.start
+
+  # State machine
+  #   state 0: file has never been created or has been corrupted
+  #   state 1: bytecode as been generated properly
+  #   state 2: bytecode as been initialized with 00
+  #
+  # new: is a request to generate a new bytecode
+  # stop: is a request to exit immediately because
+  #       the bytecode is not needed
+  if [[ ! -s "$smart_contract_bytecode" ]]; then
+    # file doesn't exist or is empty
+    # state 0
+    if [[ -z "$SKIP_SMART_CONTRACT_BYTECODE_GENERATION" ]]; then
+      # go to state 1
+      echo "new" > "$smart_contract_generator_start"
+    else
+      # go to state 2
+      echo "00" > "$smart_contract_bytecode"
+      echo "stop" > "$smart_contract_generator_start"
+    fi
+  else
+    content=$(cat "$smart_contract_bytecode")
+    if [[ "$content" -eq "00" ]]; then
+      # state 2
+      if [[ -z "$SKIP_SMART_CONTRACT_BYTECODE_GENERATION" ]]; then
+        # go to state 1
+        echo "new" > "$smart_contract_generator_start"
+      else
+        # do nothing
+        echo "stop" > "$smart_contract_generator_start"
+      fi
+    else
+      # state 1
+      if [[ -z "$SKIP_SMART_CONTRACT_BYTECODE_GENERATION" ]]; then
+        # go to state 1
+        echo "new" > "$smart_contract_generator_start"
+      else
+        # do nothing
+        echo "stop" > "$smart_contract_generator_start"
+      fi
+    fi
+  fi
+}

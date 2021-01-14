@@ -24,14 +24,6 @@ function forget() {
 	drop_logs
 }
 
-function maybe_generate_smartcontract_bytecode() {
-	# if [[ -z "$SKIP_SMART_CONTRACT_BYTECODE_GENERATION" ]]; then
-	local smart_contract_generator_start
-	smart_contract_generator_start=$FOLDER_SYNC/smart-contract-generator.start
-	touch "$smart_contract_generator_start"
-	# fi
-}
-
 function deploy() {
 	local native_block_init
 	local host_block_init
@@ -47,12 +39,12 @@ function deploy() {
 	
 	logi "Waiting for init files..."
 
+	# warn: needs erc777-smart-contract >= 2.3.0
 	maybe_generate_smartcontract_bytecode
 
-	wait_file "$smart_contract_bytecode"
-	# exit 1
 	wait_file "$native_block_init"
 	wait_file "$host_block_init"
+	wait_file "$smart_contract_bytecode"
 
 	logi "Init files found!"
 	eval "initialize_$HOST_SYMBOL"
