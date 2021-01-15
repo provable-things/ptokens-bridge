@@ -12,10 +12,16 @@ function drop_database() {
 			fi
 			;;
 		nitro )
+			# TODO: put in a loop
 			if [[ $(rm -r "$FOLDER_PROXY/mydb.dat" 2> /dev/null) -ne 0 ]]; then
 			  logi "Failed to drop the core database, maybe it doesn't exists..."
 			else
 			  logi "Dropping core's database...done!"
+			fi
+			if [[ $(rm -r "$FOLDER_PROXY/kms_alias_prefix.txt" 2> /dev/null) -ne 0 ]]; then
+				logi "Failed to drop kms_alias_prefix.txt, maybe it doesn't exists..."
+			else
+			  logi "Dropping kms_alias_prefix.txt...done!"
 			fi
 			;;
 	esac
