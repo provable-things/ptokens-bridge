@@ -46,6 +46,8 @@ function deploy() {
 	wait_file "$host_block_init"
 	wait_file "$smart_contract_bytecode"
 
+	check_enclave_is_ready
+
 	logi "Init files found!"
 	eval "initialize_$HOST_SYMBOL"
 

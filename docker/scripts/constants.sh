@@ -19,6 +19,8 @@ SCRIPT_UTILS=$HOME/scripts/utils.sh
 SCRIPT_ERC20=$HOME/scripts/erc20.sh
 # shellcheck disable=SC2034
 SCRIPT_ADB=$HOME/scripts/adb.sh
+# shellcheck disable=SC2034
+SCRIPT_ADB=$HOME/scripts/nitro.sh
 
 # shellcheck disable=SC2034
 FILE_SMART_CONTRACT_BYTECODE=$HOME/sync
