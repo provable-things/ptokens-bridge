@@ -7,6 +7,8 @@ SCRIPT_CONSTANTS=$HOME/scripts/constants.sh
 [ -f "$SCRIPT_LOG" ] && . "$SCRIPT_LOG"
 # shellcheck source=./scripts/adb.sh
 [ -f "$SCRIPT_ADB" ] && . "$SCRIPT_ADB"
+# shellcheck source=./scripts/nitro.sh
+[ -f "$SCRIPT_NITRO" ] && . "$SCRIPT_NITRO"
 
 function wait_file() {
   local file
@@ -194,4 +196,17 @@ function maybe_install_proxy_deps() {
       exit 1
       ;;
   esac
+}
+
+function check_enclave_is_ready() {
+  case $TEE in
+    strongbox )
+      ;;
+    vanilla )
+      ;;
+    nitro )
+      ping_nitro
+      logi "Nitro enclave is listening!"
+      ;;
+  esac 
 }
