@@ -1,0 +1,16 @@
+version: '3'
+services:
+  utxo_recovery:
+    image: provable/ptokens-utxo-recovery:${VERSION_UTXO_RECOVERY}-${TEE}
+    env_file: ../../.env
+    environment:
+      ROLE: native
+    volumes:
+      - sync:/home/provable/sync
+      - pnpm-store:/home/provable/.pnpm-store
+      - ../../enclave-proxy:/home/provable/proxy
+      - utxo_recovery_nm:/home/provable/syncer/node_modules
+    network_mode: host
+
+volumes:
+  utxo_recovery_nm:

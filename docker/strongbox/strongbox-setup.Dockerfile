@@ -13,7 +13,6 @@ WORKDIR $HOME
 COPY --chown=provable:provable --from=0 \
     /usr/bin/mongo* \
     /usr/bin/
-COPY --chown=provable:provable setup.sh .
 COPY --chown=provable:provable scripts scripts
 
 USER provable
@@ -22,4 +21,4 @@ VOLUME $FOLDER_SYNC
 VOLUME $FOLDER_PROXY
 VOLUME $PNPM_STORE
 
-ENTRYPOINT ["./setup.sh"]
+ENTRYPOINT ["./scripts/setup.sh"]

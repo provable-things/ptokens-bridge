@@ -1,0 +1,61 @@
+version: '3'
+services:
+  syncer_native:
+    image: provable/ptokens-eos-syncer:${VERSION_NATIVE_SYNCER}-${TEE}
+    env_file: ../../.env
+    environment:
+      ROLE: native
+    volumes:
+      - sync:/home/provable/sync
+      - pnpm-store:/home/provable/.pnpm-store
+      - syncer_native_nm:/home/provable/syncer/node_modules
+      - ../../enclave-proxy:/home/provable/proxy
+    network_mode: host
+    restart: unless-stopped
+
+  syncer_host:
+    image: provable/ptokens-eth-syncer:${VERSION_HOST_SYNCER}-${TEE}
+    env_file: ../../.env
+    environment:
+      ROLE: host
+    volumes:
+      - pnpm-store:/home/provable/.pnpm-store
+      - sync:/home/provable/sync
+      - syncer_host_nm:/home/provable/syncer/node_modules
+      - ../../enclave-proxy:/home/provable/proxy
+    network_mode: host
+    restart: unless-stopped
+    
+  broadcaster_native:
+    image: provable/ptokens-eos-tx-broadcaster:${VERSION_NATIVE_BROADCASTER}
+    env_file: ../../.env
+    environment:
+      ROLE: native
+    volumes:
+      - sync:/home/provable/sync
+      - pnpm-store:/home/provable/.pnpm-store
+      - broadcaster_native_nm:/home/provable/broadcaster/node_modules
+    network_mode: host
+    restart: unless-stopped
+
+  broadcaster_host:
+    image: provable/ptokens-eth-tx-broadcaster:${VERSION_HOST_BROADCASTER}
+    env_file: ../../.env
+    environment:
+      ROLE: host
+    volumes:
+      - sync:/home/provable/sync
+      - pnpm-store:/home/provable/.pnpm-store
+      - broadcaster_host_nm:/home/provable/broadcaster/node_modules
+    network_mode: host
+    restart: unless-stopped
+
+  api:
+    image: provable/ptokens-api-server:${VERSION_API}-${TEE}
+    env_file: ../../.env
+    volumes:
+      - sync:/home/provable/sync
+      - api_server_nm:/home/provable/api-server/node_modules
+      - ../../enclave-proxy:/home/provable/proxy
+    network_mode: host
+    restart: unless-stopped
