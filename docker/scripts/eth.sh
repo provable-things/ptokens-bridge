@@ -24,85 +24,138 @@ function maybe_push_smartcontract_bytecode() {
   esac
 }
 
-function eth_init() {
+function is_eos_related_bridge() {
+  local bridge_type
+  local reduced_bridge_type
+
+  bridge_type="p$NATIVE_SYMBOL-on-$HOST_SYMBOL"
+
+  get_reduced_bridge_type "$bridge_type" reduced_bridge_type
+
+  grep -E 'eos' <<< "$reduced_bridge_type" 1> /dev/null
+}
+
+function get_command_name() {
+  local reduced_symbol
+  reduced_symbol=$1
+  __command_name=$2
+
+  command_name=null
+  case $reduced_symbol in
+    eth|erc20 )
+      command_name=initializeEth
+      ;;
+    evm )
+      command_name=initializeEvm
+      ;;
+    * )
+      loge "Couldn't find command name for reduced symbol: $reduced_symbol!"
+      exit 1
+  esac
+
+  logd "Command name is $command_name"
+
+  # shellcheck disable=SC2140
+  eval "$__command_name"="'$command_name'"
+}
+
+function get_eth_init_command() {
+  local type
   local symbol
+  local bridge_type
+  local reduced_symbol
+
   local confs
   local chain_id
-  local gas_price
+  local gasprice
 
-  symbol=$1
-  confs=$2
-  chain_id=$3
-  gas_price=$4
+  type=$1
+  symbol=$2
+  reduced_symbol=$3
+  
+  __cmd=$4
+
+  get_or_exit "${type^^}_ETH_CONFS" confs
+  get_or_exit "${type^^}_ETH_CHAIN_ID" chain_id
+  get_or_exit "${type^^}_ETH_GASPRICE" gasprice
+
+  get_command_name "$reduced_symbol" command_name
+
+  cmd="cd $FOLDER_PROXY && $EXC_PROXY $command_name"
+  cmd="$cmd --confs=$confs"
+  cmd="$cmd --gasPrice=$gasprice"
+  cmd="$cmd --chainId=$chain_id"
+  cmd="$cmd --file=$FOLDER_SYNC/$symbol-init.json"
+  cmd="$cmd 1> $FOLDER_SYNC/.$symbol-init-output.json"
+
+  logd "${symbol^^} init command: $cmd"
+
+  # shellcheck disable=SC2140
+  eval "$__cmd"="'$cmd'"
+}
+
+function maybe_set_contract_address() {
+  local set_contract_address_cmd 
+  logd "heeeeeere"  
+  case $TEE in
+    nitro )
+      set_contract_address_cmd="cd $FOLDER_PROXY && $EXC_PROXY addErc777ContractAddress 0x0000000000000000000000000000000000000000"
+      if eval "$set_contract_address_cmd"; then
+        logi "Erc777 contract address set!"
+      else
+	loge "Failed to set the contract address!"
+	logd "This command failed: $set_contract_address_cmd"
+	exit 1
+      fi
+      ;;
+  esac
+}
+
+function eth_init() {
+  local type
+  local symbol
+  local init_command
+  local reduced_symbol
+
+  type=$1
+  symbol=$2
+  reduced_symbol=$3
 
   maybe_push_smartcontract_bytecode
   
-  case $TEE in
-    nitro )
-      cd "$FOLDER_PROXY" && $EXC_PROXY initializeEth \
-        --FILE="$FOLDER_SYNC"/smart-contract-bytecode \
-        --confs="$confs" \
-        --gasPrice="$gas_price" \
-        --chainId="$chain_id" \
-        --file="$FOLDER_SYNC/$symbol-init.json" \
-        1> "$FOLDER_SYNC/.$symbol-init-output.json"
-      ;;
-    * )
-      cd "$FOLDER_PROXY" && $EXC_PROXY initializeEth \
-        "$FOLDER_SYNC/smart-contract-bytecode" \
-        --confs="$confs" \
-        --gasPrice="$gas_price" \
-        --chainId="$chain_id" \
-        --file="$FOLDER_SYNC/$symbol-init.json" \
-        1> "$FOLDER_SYNC/.$symbol-init-output.json"
-      ;;
-  esac
+  get_eth_init_command \
+    "$type" \
+    "$symbol" \
+    "$reduced_symbol" \
+    init_command
+  
+  eval "$init_command"
 
-  # shellcheck disable=SC2181
-  [[ $? -ne 0 ]] \
-    && loge "Failed to initialize enclave...aborting!" && exit 1 \
-    || logi "Initializing ETH side...done"
+  maybe_set_contract_address
 }
 
+function get_smart_contract_address() {
+  init_file=$1
+  __smart_contract_address=$2
 
-function eth_init_native() {
-  exit_if_empty "$NATIVE_SYMBOL" "Invalid NATIVE_SYMBOL submitted"
-  exit_if_empty "$NATIVE_CHAIN_ID" "Invalid NATIVE_CHAIN_ID submitted"
-  exit_if_empty "$NATIVE_GASPRICE" "Invalid NATIVE_GASPRICE submitted"
-  exit_if_empty "$NATIVE_CONFS" "Invalid NATIVE_CONFS submitted"
+  smart_contract_address=null
 
-  eth_init \
-    "$NATIVE_SYMBOL" \
-    "$NATIVE_CONFS" \
-    "$NATIVE_CHAIN_ID" \
-    "$NATIVE_GASPRICE"
+  logd "Checking init file $init_file"
+
+  smart_contract_address=$(jq -r .smart_contract_address "$init_file")
+  if [ "$smart_contract_address" == "null" ]; then
+    exit_if_empty "Variable SMART_CONTRACT_ADDRESS is required for this bridge type!"
+    # shellcheck disable=SC2153
+    smart_contract_address=$SMART_CONTRACT_ADDRESS
+    logd "Smart contract address is $smart_contract_address"    
+  fi
+
+  # shellcheck disable=SC2140
+  eval "$__smart_contract_address"="'$smart_contract_address'"
 }
-
-function eth_init_host() {
-  eth_init \
-    "$HOST_SYMBOL" \
-    "$HOST_CONFS" \
-    "$HOST_CHAIN_ID" \
-    "$HOST_GASPRICE"
-  exit_if_empty "$HOST_SYMBOL" "Invalid HOST_SYMBOL submitted"
-  exit_if_empty "$HOST_CHAIN_ID" "Invalid HOST_CHAIN_ID submitted"
-  exit_if_empty "$HOST_GASPRICE" "Invalid HOST_GASPRICE submitted"
-  exit_if_empty "$HOST_CONFS" "Invalid HOST_CONFS submitted"
-}
-
-function initialize_eth() {
-  # shellcheck disable=SC2143
-  [[ $(env | grep -E '^(eth|erc20)$' | grep 'NATIVE') ]] \
-    && eth_init_native \
-    || eth_init_host
-}
-
-function initialize_erc20() {
-  initialize_eth
-}
-
 
 function prepare_eth_sync_material() {
+  local type
   local symbol
   local eth_address
   local initialization_file
@@ -111,12 +164,19 @@ function prepare_eth_sync_material() {
   local apiserver_file
   local broadcaster_file
 
-  symbol=$(echo "$NATIVE_SYMBOL $HOST_SYMBOL" | grep -E -o "(erc20|eth)")
-  initialization_file=$FOLDER_SYNC/.$symbol-init-output.json
+  type=$1
+  symbol=$2
 
-  smart_contract_address=$(jq -r '.smart_contract_address' "$initialization_file")
+  initialization_file=$FOLDER_SYNC/.$symbol-init-output.json
+  
   eth_address=$(jq -r '.eth_address' "$initialization_file")
 
+  # If peos-on-eth or erc20 bridge the value must be manually submitted with
+  # through SMART_CONTRACT_ADDRESS in the .env file
+  # shellcheck disable=SC2153
+  get_smart_contract_address "$initialization_file" smart_contract_address
+
+  logd "type: $type"
   logd "eth_address: $eth_address"
   logd "smart_contract_address: $smart_contract_address"
 
@@ -128,19 +188,22 @@ function prepare_eth_sync_material() {
   maybe_initialize_json_file "$apiserver_file"
   maybe_initialize_json_file "$broadcaster_file"
 
-  local broadcaster_content
   local api_content
+  local broadcaster_content
 
-  broadcaster_content=$(jq ".ENCLAVE_ADDRESS=\"$eth_address\"" "$broadcaster_file")
+  broadcaster_content=$(jq \
+    ".ENCLAVE_ADDRESS=\"$eth_address\"" \
+    "$broadcaster_file" \
+  )
+
   api_content=$(jq "\
     .SMART_CONTRACT_ADDRESS=\"$smart_contract_address\" | \
-    .HOST_IDENTITY=\"$eth_address\"" \
+    .${type^^}_IDENTITY=\"$eth_address\"" \
     "$apiserver_file" \
   )
 
   echo "$broadcaster_content" > "$broadcaster_file"
   echo "$api_content" > "$apiserver_file"
-
 
   touch_start_files "$symbol"
 
@@ -173,8 +236,7 @@ function maybe_generate_smartcontract_bytecode() {
       echo "stop" > "$smart_contract_generator_start"
     fi
   else
-    content=$(cat "$smart_contract_bytecode")
-    if [[ "$content" -eq "00" ]]; then
+    if [[ $(wc -m "$smart_contract_bytecode" | awk '{print $1}') -le 3 ]]; then
       # state 2
       if [[ -z "$SKIP_SMART_CONTRACT_BYTECODE_GENERATION" ]]; then
         # go to state 1
@@ -195,3 +257,40 @@ function maybe_generate_smartcontract_bytecode() {
     fi
   fi
 }
+
+function initialize_eth() {
+  local side
+  local symbol
+  local reduced_symbol
+
+  side=$1
+  symbol=$2
+  reduced_symbol="eth"
+
+  eth_init "$side" "$symbol" "$reduced_symbol"
+}
+
+function initialize_evm() {
+  local side
+  local symbol
+  local reduced_symbol
+
+  side=$1
+  symbol=$2
+  reduced_symbol="evm"
+
+  eth_init "$side" "$symbol" "$reduced_symbol"
+}
+
+function initialize_erc20() {
+  local side
+  local symbol
+  local reduced_symbol
+
+  side=$1
+  symbol=$2
+  reduced_symbol="erc20"
+
+  eth_init "$side" "$symbol" "$reduced_symbol"
+}
+

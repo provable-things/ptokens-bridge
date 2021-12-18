@@ -2,18 +2,18 @@
 
 function logd() {
   output=""
-  [ -z "$1" ] && read -r output || output="D $1"
-  [ ! -z "$DEBUG" ] && echo "$output" || :
+  if [[ -z "$1" ]]; then read -r output; else output="D $1"; fi
+  if [[ -n "$DEBUG" ]]; then echo "$output"; fi
 }
 
 function logi() {
   output=""
-  [ -z "$1" ] && read -r output || output="✔ $1"
-  [[ ! -z "$DEBUG" || ! -z "$INFO" ]] && echo "$output" || :
+  if [[ -z "$1" ]]; then read -r output; else output="✔ $1"; fi
+  if [[ -n "$DEBUG" || -n "$INFO" ]]; then echo "$output"; fi
 }
 
 function loge() {
   output=""
-  [ -z "$1" ] && read -r output || output="✘ $1"
+  if [[ -z "$1" ]]; then read -r output; else output="✘ $1"; fi
   echo "$output"
 }

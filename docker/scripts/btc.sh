@@ -9,41 +9,70 @@ SCRIPT_CONSTANTS=$HOME/scripts/constants.sh
 # shellcheck source=./scripts/log.sh
 [ -f "$SCRIPT_LOG" ] && . "$SCRIPT_LOG"
 
-function initialize_btc_fork() {
-  local fork
-  local native_network
+function get_btc_init_command() {
+  local type
+  local symbol
+  local bridge_type
+  local reduced_symbol
 
-  fork=$1
-  #shellcheck disable=SC2153
-  native_network=$(capitalize_first_letter "$NATIVE_NETWORK")
-  cd "$FOLDER_PROXY" && $EXC_PROXY initializeBtc \
-    --fee="$NATIVE_FEE" \
-    --difficulty="$NATIVE_DIFFICULTY" \
-    --network="$native_network" \
-    --confs="$NATIVE_CONFS" \
-    --file="$FOLDER_SYNC/${NATIVE_SYMBOL}-init.json" \
-  1> "$FOLDER_SYNC/.${NATIVE_SYMBOL}-init-output.json"
+  type=$1
+  symbol=$2
+  reduced_symbol=$3
+  
+  __cmd=$4
 
-  # shellcheck disable=SC2181
-  [[ ! $? -eq 0 ]] \
-    && loge "Failed to initialize enclave...aborting!" && exit 1 \
-    || logi "Initializing ${fork^^} side...done"
+  local fee
+  local confs
+  local network
+  local difficulty
+
+  get_or_exit "${type^^}_BTC_FEE" fee
+  get_or_exit "${type^^}_NETWORK" network
+  get_or_exit "${type^^}_BTC_CONFS" confs
+  get_or_exit "${type^^}_BTC_DIFFICULTY" difficulty
+
+  network=$(capitalize_first_letter "$network")
+
+  cmd="cd $FOLDER_PROXY && $EXC_PROXY initializeBtc"
+  cmd="$cmd --fee=$fee" 
+  cmd="$cmd --confs=$confs" 
+  cmd="$cmd --network=$network" 
+  cmd="$cmd --difficulty=$difficulty" 
+  cmd="$cmd --file=$FOLDER_SYNC/$symbol-init.json" 
+  cmd="$cmd 1> $FOLDER_SYNC/.$symbol-init-output.json"
+
+  logd "${symbol^^} init command: $cmd"
+
+  # shellcheck disable=SC2140
+  eval "$__cmd"="'$cmd'"
 }
 
+function btc_init() {
+  local type
+  local symbol
+  local init_command
+  local reduced_symbol
 
-function initialize_btc() {
-  initialize_btc_fork "btc"
-}
+  type=$1
+  symbol=$2
+  reduced_symbol=$3
 
-function initialize_doge() {
-  initialize_btc_fork "doge"
+  get_btc_init_command \
+    "$type" \
+    "$symbol" \
+    "$reduced_symbol" \
+    init_command
+
+  eval "$init_command"  
 }
 
 function get_enclave_public_key() {
-  __public_key=$1
 
   local key
+  local enclave_state
+
   key=""
+  __public_key=$1
 
   case "$ENV_VERSION" in
     1 )
@@ -67,37 +96,53 @@ function get_enclave_public_key() {
 }
 
 function prepare_btc_sync_material() {
+  local type
   local symbol
-  local enclave_state
-  local enclave_public_key
-  local apiserver_sync_file
-  local btc_syncer_file
-  local btc_broadcaster_file
 
-  symbol=$(echo "$NATIVE_SYMBOL" | grep -E -o "$REGEX_BTC_BASED_SYMBOLS")
+  local api_content
+  local syncer_file
+  local apiserver_file
+  local broadcaster_file
+  local enclave_public_key
+
+  type=$1
+  symbol=$2
+
+  logd "type: $type"
+
+  apiserver_file=$FOLDER_SYNC/api-server.json
+  syncer_file=$FOLDER_SYNC/$symbol-syncer.json
+  broadcaster_file=$FOLDER_SYNC/$symbol-broadcaster.json
+  
+  maybe_initialize_json_file "$syncer_file"
+  maybe_initialize_json_file "$apiserver_file"
+  maybe_initialize_json_file "$broadcaster_file"
 
   get_enclave_public_key enclave_public_key
 
-  apiserver_sync_file=$FOLDER_SYNC/api-server.json
-  btc_syncer_file=$FOLDER_SYNC/$symbol-syncer.json
-  btc_broadcaster_file=$FOLDER_SYNC/$symbol-broadcaster.json
-  
-  maybe_initialize_json_file "$btc_syncer_file"
-  maybe_initialize_json_file "$apiserver_sync_file"
-  maybe_initialize_json_file "$btc_broadcaster_file"
-
-  local api_content
   api_content=$(jq " \
     .ENCLAVE_PUBLIC_KEY=\"$enclave_public_key\" | \
     .RELATIVE_PATH_TO_ADDRESS_GENERATOR=\"/home/provable/proxy\"" \
-    "$apiserver_sync_file" \
+    "$apiserver_file" \
   )
 
   logd "$api_content"
 
-  echo "$api_content" > "$apiserver_sync_file"
+  echo "$api_content" > "$apiserver_file"
 
   touch_start_files "$symbol"
 
   logi "${symbol^^} configuration material ready"
+}
+
+function initialize_btc() {
+  local type
+  local symbol
+  local reduced_symbol
+
+  type=$1
+  symbol=$2
+  reduced_symbol=btc
+
+  btc_init "$type" "$symbol" "$reduced_symbol"
 }

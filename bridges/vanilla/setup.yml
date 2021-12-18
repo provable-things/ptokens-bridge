@@ -1,0 +1,22 @@
+version: '3'
+services:
+  setup:
+    build:
+      context: ../../docker
+      dockerfile: vanilla/vanilla-setup.Dockerfile
+    env_file: ../../.env
+    environment:
+      NEW: $NEW
+    volumes:
+      - sync:/home/provable/sync
+      - ../../enclave-proxy:/home/provable/proxy
+    network_mode: host
+
+volumes:
+  sync:
+  pnpm-store:
+  api_server_nm:
+  syncer_host_nm:
+  syncer_native_nm:
+  broadcaster_host_nm:
+  broadcaster_native_nm:
